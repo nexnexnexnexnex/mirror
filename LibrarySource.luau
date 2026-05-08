@@ -368,9 +368,40 @@ local Params = {
 end
 
 local SavedCameraState = nil
+local SpectateConnection = nil
+local SpectateTarget = nil
+
+local function StopSpectating()
+  local camera = workspace.CurrentCamera
+  if SpectateConnection then
+    SpectateConnection:Disconnect()
+    SpectateConnection = nil
+  end
+
+  if camera and SavedCameraState then
+    camera.CameraType = SavedCameraState.CameraType
+    camera.CameraSubject = SavedCameraState.CameraSubject
+    camera.CFrame = SavedCameraState.CFrame
+    camera.Focus = SavedCameraState.Focus
+  end
+
+  SavedCameraState = nil
+  SpectateTarget = nil
+end
 
 function g.MirrorLibrary:Spectate(username)
   local camera = workspace.CurrentCamera
+  if not camera then
+    Notify("Mirror", "Unable to access current camera")
+    return
+  end
+
+  local player = Players:FindFirstChild(username)
+  if not (player and player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
+    Notify("Mirror", "Player not found")
+    return
+  end
+
   if camera and not SavedCameraState then
     SavedCameraState = {
       CameraType = camera.CameraType,
@@ -380,27 +411,31 @@ function g.MirrorLibrary:Spectate(username)
     }
   end
 
-  local player = Players:FindFirstChild(username)
-  if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-    camera.CameraType = Enum.CameraType.Scriptable
-    camera.CFrame = player.Character.HumanoidRootPart.CFrame
-    camera.Focus = player.Character.HumanoidRootPart.CFrame
-    Notify("Mirror", "Spectating " .. username)
-  else
-    Notify("Mirror", "Player not found")
-  end
+  StopSpectating()
+  SpectateTarget = player
+  camera.CameraType = Enum.CameraType.Scriptable
+
+  SpectateConnection = game:GetService("RunService").RenderStepped:Connect(function()
+    if not SpectateTarget or not SpectateTarget.Character or not SpectateTarget.Character:FindFirstChild("HumanoidRootPart") then
+      StopSpectating()
+      Notify("Mirror", "Stopped spectating: target unavailable")
+      return
+    end
+
+    local hrp = SpectateTarget.Character.HumanoidRootPart
+    camera.CFrame = hrp.CFrame
+    camera.Focus = hrp.CFrame
+  end)
+
+  Notify("Mirror", "Spectating " .. username)
 end
 
 function g.MirrorLibrary:Unspectate()
-  local camera = workspace.CurrentCamera
-  if SavedCameraState and camera then
-    camera.CameraType = SavedCameraState.CameraType
-    camera.CameraSubject = SavedCameraState.CameraSubject
-    camera.CFrame = SavedCameraState.CFrame
-    camera.Focus = SavedCameraState.Focus
-    SavedCameraState = nil
-    Notify("Mirror", "Stopped spectating")
-  else
+  if not SavedCameraState and not SpectateConnection then
     Notify("Mirror", "You aren't spectating anyone")
+    return
   end
+
+  StopSpectating()
+  Notify("Mirror", "Stopped spectating")
 end
