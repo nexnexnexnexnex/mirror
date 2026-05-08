@@ -20,9 +20,11 @@ g.MirrorLibrary = Mirror
 g.MirrorLibrary.ShowNotifications = true -- change to false to disable notifications from startup
 
 local libversion = "1.0.0"
+local notificationCounter = 0
 
 -- yes this is vibecoded i'm terrible at ui design and tweenservice
 local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
 local CoreGui = game:GetService("CoreGui")
 
 local function Notify(title, text)
@@ -60,7 +62,9 @@ local function Notify(title, text)
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BorderSizePixel = 0
     frame.BackgroundTransparency = 1
-    frame.LayoutOrder = tick()
+    if notificationCounter == nil then notificationCounter = 0 end
+    notificationCounter = notificationCounter + 1
+    frame.LayoutOrder = notificationCounter
     frame.Parent = holder
 
     local corner = Instance.new("UICorner")
@@ -365,4 +369,21 @@ local Params = {
 }
   local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
   synsaveinstance(options)
+end
+
+function g.MirrorLibrary:RemoveAllPlayers()
+  for _, ins in ipairs(Players:GetPlayers()) do
+    local model = ins.Character
+    if model.Name ~= lp.Name then
+      local s, e = pcall(function()
+        model:Destroy()
+      end)
+
+      if s then
+        Notify("Mirror", "Removed "..model.Name)
+      else
+        Notify("Mirror", string.format("Error: %s", e))
+      end
+    end
+  end
 end
