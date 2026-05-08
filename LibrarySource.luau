@@ -126,8 +126,7 @@ end
 
 -- Checks existence of all MirrorLibrary functions
 function g.MirrorLibrary:CheckCustomFunctions()
-    -- List the specific functions you want to verify
-    local functionsToVerify = {
+    local ftc = {
         "debUNCTest",
         "CheckCustomFunctions",
         "GetLibVersion",
@@ -145,14 +144,11 @@ function g.MirrorLibrary:CheckCustomFunctions()
 
     print("--- CheckCustomFunctions ---")
 
-    for _, name in ipairs(functionsToVerify) do
-        -- We check 'self' because this function is inside MirrorLibrary
+    for _, name in ipairs(ftc) do
         if self[name] and type(self[name]) == "function" then
-            -- Success (Using warn for orange or your green trick)
-            print("✅ MirrorLib:" .. name)
+            print("✅ MirrorLibrary:" .. name)
         else
-            -- Failure (The Red X you are seeing)
-            warn("❌ MirrorLib:" .. name .. " NOT FOUND")
+            warn("❌ MirrorLibrary:" .. name .. " NOT FOUND")
         end
     end
 end
